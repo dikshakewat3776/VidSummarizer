@@ -10,6 +10,7 @@ from pymongo.errors import ConnectionFailure
 from rake_nltk import Rake
 import nltk
 import os
+import re
 
 TEMPLATE_DIR = os.path.abspath('templates')
 STATIC_DIR = os.path.abspath('styles')
@@ -51,11 +52,10 @@ def search():
     collection = mongo_ingestion()
     unique_id = []
     for data in collection.find():
-        data_corpous = data["video_text_corpous"]
-        if util.dot_score(query_embedding, data_corpous) > 0:
-            unique_id.append(data["id"])
-    print(unique_id)
-    return render_template("search.html")
+        data_corpous = data["video_text_corpous"].split(".")
+        if util.dot_score(query_embedding, data_corpous)[0] > 0.5:
+            unique_id.append(data["video_url"])
+    return render_template("search.html",context={"urls":unique_id})
 
 
 @app.route("/video_data", methods=["GET"])
@@ -117,13 +117,16 @@ def upload_file():
         entities = get_entities(text_summ)
         db_data = dict()
         db_data["id"] = 1
-        db_data["video_url"] = video_url
+        db_data["video_url"] = re.sub(r"(?ism).*?=(.*?)$", r"https://www.youtube.com/embed/\1", video_url)
         db_data["video_text_corpous"] = text_generation
         db_data["video_summary"] = text_summ
         db_data["video_entities"] = entities
         collection = mongo_ingestion()
         collection.insert_one(db_data)
-        return render_template('Video_data.html', context={"text_generation": text_generation, "text_summ": text_summ,"entities":entities})
+        urls = []
+        for data in collection.find():
+            urls.append(data["video_url"])
+        return render_template('Video_data.html', context={"text_generation": text_generation, "text_summ": text_summ,"entities":entities,"urls":urls})
 
 
 @app.route("/", methods=["GET"])
