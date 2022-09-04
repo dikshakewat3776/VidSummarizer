@@ -17,7 +17,7 @@ app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
 r = sr.Recognizer()
 model = SBertSummarizer('paraphrase-MiniLM-L6-v2')
 summarizer = pipeline('summarization')
-model = SentenceTransformer('multi-qa-MiniLM-L6-cos-v1')
+
 nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
 nltk.download('stopwords')
@@ -45,19 +45,17 @@ def search():
     """
     >> reference link : https://www.sbert.net/docs/pretrained_models.html
     """
-
-
-    query_embedding = model.encode('How big is London')
-    passage_embedding = model.encode(['London has 9,787,426 inhabitants at the 2011 census',
-                                      'London is known for its finacial district'])
+    query = request.form.get("query")
+    model = SentenceTransformer('multi-qa-MiniLM-L6-cos-v1')
+    query_embedding = model.encode(query)
     collection = mongo_ingestion()
     unique_id = []
     for data in collection.find():
         data_corpous = data["video_text_corpous"]
-        if util.dot_score(query_embedding, data_corpous) > 0.6:
+        if util.dot_score(query_embedding, data_corpous) > 0:
             unique_id.append(data["id"])
     print(unique_id)
-    print("Similarity:", util.dot_score(query_embedding, passage_embedding))
+    return render_template("search.html")
 
 
 @app.route("/video_data", methods=["GET"])
