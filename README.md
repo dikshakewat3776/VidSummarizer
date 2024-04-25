@@ -1,7 +1,4 @@
 # VidSummarizer
-
-## System Overview
-
 To build a video summarization model to extract a summary of a video. Summarized video content
 to understand the video content without watching a video. To use summarised text to build a
 video search engine, which will help to search a video just by the video’s description.
